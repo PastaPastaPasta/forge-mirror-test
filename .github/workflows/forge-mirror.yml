@@ -38,7 +38,7 @@ jobs:
         run: |
           cargo build --locked -p dg -p git-remote-dash -p forge-import
           echo "$PWD/target/debug" >> "$GITHUB_PATH"
-      - uses: PastaPastaPasta/dash-forge/action@67be4b0b5cb43b9b8c0c075d08a5074d305c2563
+      - uses: ./.dash-forge/action
         with:
           repo: 'dash://4dQh4Xy8Fp7hRCqu958KwHGCudrcr5fCkEaHS5j2kc34/forge-mirror-test'
           network: 'devnet'
