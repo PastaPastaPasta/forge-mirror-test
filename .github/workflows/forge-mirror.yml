@@ -1,0 +1,52 @@
+# Mirrors github.com/PastaPastaPasta/forge-mirror-test into Dash Forge (dash://4dQh4Xy8Fp7hRCqu958KwHGCudrcr5fCkEaHS5j2kc34/forge-mirror-test).
+# Made by the Forge mirror wizard; see docs/guides/mirror-a-github-repo.md in
+# PastaPastaPasta/dash-forge. The job never checks out or runs this repository's code.
+name: Forge mirror
+on:
+  push: { branches: ['**'], tags: ['**'] }
+  issues: { types: [opened, edited, closed, reopened, labeled, unlabeled] }
+  issue_comment: { types: [created] }
+  pull_request_target: { types: [opened, edited, closed, reopened, synchronize] }
+  release: { types: [published, edited] }
+  schedule: [{ cron: '17 3 * * *' }]     # daily reconcile
+  workflow_dispatch:
+concurrency: { group: forge-mirror, cancel-in-progress: false }
+jobs:
+  mirror:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    permissions: { contents: read, issues: read, pull-requests: read }
+    steps:
+      # No Dash Forge release is published yet: build the three binaries from the pinned
+      # commit. The first run compiles for several minutes; rust-cache makes later runs quick.
+      - name: Install protoc
+        run: |
+          curl -sSLo /tmp/protoc.zip https://github.com/protocolbuffers/protobuf/releases/download/v28.3/protoc-28.3-linux-x86_64.zip
+          sudo unzip -q -o /tmp/protoc.zip -d /usr/local bin/protoc 'include/*'
+      - name: Check out Dash Forge 67be4b0b5cb4
+        uses: actions/checkout@v4
+        with:
+          repository: PastaPastaPasta/dash-forge
+          ref: 67be4b0b5cb43b9b8c0c075d08a5074d305c2563
+          path: .dash-forge
+          persist-credentials: false
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: .dash-forge
+      - name: Build dg, git-remote-dash and forge-import
+        working-directory: .dash-forge
+        run: |
+          cargo build --locked -p dg -p git-remote-dash -p forge-import
+          echo "$PWD/target/debug" >> "$GITHUB_PATH"
+      - uses: PastaPastaPasta/dash-forge/action@67be4b0b5cb43b9b8c0c075d08a5074d305c2563
+        with:
+          repo: 'dash://4dQh4Xy8Fp7hRCqu958KwHGCudrcr5fCkEaHS5j2kc34/forge-mirror-test'
+          network: 'devnet'
+          devnet-name: 'bonsia'
+          sync: 'code,releases,labels,issues,prs'
+          storage-kind: 'platform'
+          cost-cap: '0.1'
+          install: 'false'
+        env:
+          DASH_FORGE_KEY: ${{ secrets.DASH_FORGE_KEY }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
