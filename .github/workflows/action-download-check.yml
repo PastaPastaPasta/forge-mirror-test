@@ -1,0 +1,13 @@
+name: Action download check
+on: workflow_dispatch
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: PastaPastaPasta/dash-forge/action@f8dd2e9c9c73525efdaa2e2baeca9dca7ff3de19
+        with:
+          repo: forge-mirror-test
+          network: devnet
+          devnet-name: bonsia
+          install: 'false'
+          dry-run: 'true'
